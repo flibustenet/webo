@@ -19,6 +19,7 @@ func Tx(r *http.Request) *sqlx.Tx {
 func (t *TX) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log := CatcherLog(r)
 	tx := t.DB.MustBegin()
+
 	defer func() {
 		if rec := recover(); rec != nil {
 			log.Print("rollback")
@@ -28,6 +29,7 @@ func (t *TX) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			tx.Commit()
 		}
 	}()
+
 	ctx := context.WithValue(r.Context(), "webo-tx", tx)
 	r = r.WithContext(ctx)
 	t.next.ServeHTTP(w, r)

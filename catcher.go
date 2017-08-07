@@ -38,6 +38,7 @@ func (h *Catcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r = r.WithContext(ctx)
 	defer func() {
 		if rec := recover(); rec != nil {
+			log.Println(rec)
 			lg.Println("================== Panic ==============")
 			s := fmt.Sprintf("%+v", rec)
 			if !strings.Contains(s, "runtime.") { // si pas de stack, créée une nouvelle erreur
