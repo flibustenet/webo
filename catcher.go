@@ -17,7 +17,7 @@ import (
 // RECOVER
 
 // renvoi le log lui-même créé par catcher et positionné dans context
-func CatcherLog(r *http.Request) *log.Logger {
+func RequestCatcherLog(r *http.Request) *log.Logger {
 	return r.Context().Value("webo-catcher-log").(*log.Logger)
 }
 

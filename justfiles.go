@@ -3,7 +3,14 @@ package webo
 import (
 	"net/http"
 	"os"
+
+	"github.com/gorilla/mux"
 )
+
+func Assets(r *mux.Router, static string) {
+	r.PathPrefix("/" + static).Handler(http.StripPrefix("/"+static, http.FileServer(JustFiles{http.Dir(static)}))).Name(static)
+	//r.PathPrefix("/" + static).Handler(http.StripPrefix("/"+static, http.FileServer(http.Dir(static)))).Name(static)
+}
 
 type JustFiles struct {
 	FS http.FileSystem

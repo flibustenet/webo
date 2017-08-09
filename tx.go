@@ -13,11 +13,11 @@ type TX struct {
 	next http.Handler
 }
 
-func Tx(r *http.Request) *sqlx.Tx {
+func RequestTx(r *http.Request) *sqlx.Tx {
 	return r.Context().Value("webo-tx").(*sqlx.Tx)
 }
 func (t *TX) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log := CatcherLog(r)
+	log := RequestCatcherLog(r)
 	tx := t.DB.MustBegin()
 
 	defer func() {
