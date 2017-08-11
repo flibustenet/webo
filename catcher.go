@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"reflect"
@@ -30,12 +31,13 @@ type Catcher struct {
 	next    http.Handler
 }
 
-func (h *Catcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *Catcher) ServeHTTP(wrt http.ResponseWriter, r *http.Request) {
 	var logBuf bytes.Buffer
 	lg := log.New(&logBuf, "", log.Lshortfile)
 	lg.Println(r.Method, r.URL)
 	ctx := context.WithValue(r.Context(), "webo-catcher-log", lg)
 	r = r.WithContext(ctx)
+	w := httptest.NewRecorder()
 	defer func() {
 		if rec := recover(); rec != nil {
 			log.Println(rec)
@@ -62,25 +64,39 @@ func (h *Catcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 				if err != nil {
 					log.Println(err)
-					http.Error(w, "500: Un incident s'est produit et n'a pas pu être envoyé à l'administrateur",
+					http.Error(wrt, "500: Un incident s'est produit et n'a pas pu être envoyé à l'administrateur",
 						http.StatusInternalServerError)
 					return
 				}
-				http.Error(w, "500: Un incident s'est produit et a été envoyé à l'administrateur",
+				http.Error(wrt, "500: Un incident s'est produit et a été envoyé à l'administrateur",
 					http.StatusInternalServerError)
 				defer resp.Body.Close()
 				return
 			}
 			if h.debug > 0 {
-				fmt.Fprintf(w, logBuf.String())
+				fmt.Fprintf(wrt, logBuf.String())
 			} else {
-				http.Error(w, "500: Un incident s'est produit",
+				http.Error(wrt, "500: Un incident s'est produit",
 					http.StatusInternalServerError)
 			}
 		}
 	}()
 
 	h.next.ServeHTTP(w, r)
+	for k, v := range w.Header() {
+		wrt.Header()[k] = v
+	}
+	if wrt.Header().Get("Content-Type") == "" {
+		wrt.Header().Set("Content-Type", "text/html; charset=utf-8")
+	}
+	if w.Code == 0 {
+		w.Code = 200
+	}
+	wrt.WriteHeader(w.Code)
+	_, err := wrt.Write(w.Body.Bytes())
+	if err != nil {
+		panic(err)
+	}
 	fmt.Fprintf(os.Stderr, logBuf.String())
 }
 func NewCatcher(debug int, name string, url_log string, version string, poste string, h http.Handler) *Catcher {
