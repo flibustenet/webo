@@ -12,6 +12,11 @@ func Assets(r *mux.Router, static string) {
 	//r.PathPrefix("/" + static).Handler(http.StripPrefix("/"+static, http.FileServer(http.Dir(static)))).Name(static)
 }
 
+func AssetsDir(r *mux.Router, static string, dir string) {
+	r.PathPrefix(static).Handler(http.StripPrefix(static, http.FileServer(JustFiles{http.Dir(dir)}))).Name(static)
+	//r.PathPrefix("/" + static).Handler(http.StripPrefix("/"+static, http.FileServer(http.Dir(static)))).Name(static)
+}
+
 type JustFiles struct {
 	FS http.FileSystem
 }
