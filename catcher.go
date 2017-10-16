@@ -33,7 +33,7 @@ type Catcher struct {
 
 func (h *Catcher) ServeHTTP(wrt http.ResponseWriter, r *http.Request) {
 	var logBuf bytes.Buffer
-	lg := log.New(&logBuf, "", log.Lshortfile)
+	lg := log.New(&logBuf, "", log.LstdFlags)
 	lg.Println(r.Method, r.URL)
 	ctx := context.WithValue(r.Context(), "webo-catcher-log", lg)
 	r = r.WithContext(ctx)
