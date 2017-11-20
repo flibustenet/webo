@@ -55,9 +55,8 @@ func (h *Catcher) ServeHTTP(wrt http.ResponseWriter, r *http.Request) {
 			} else {
 				lg.Print(s)
 			}
-			log.Println(logBuf.String())
 			if h.debug == 0 && h.url_log != "" {
-				resp, err := http.PostForm(h.url_log, url.Values{"title": {"[bug] " + h.name},
+				resp, err := http.PostForm(h.url_log, url.Values{"title": {"[bug] " + h.name + "_" + h.version},
 					"version": {h.version},
 					"poste":   {h.poste},
 					"log":     {logBuf.String()}})
