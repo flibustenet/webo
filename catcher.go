@@ -73,7 +73,7 @@ func (h *Catcher) ServeHTTP(wrt http.ResponseWriter, r *http.Request) {
 				return
 			}
 			if h.debug > 0 {
-				fmt.Fprintf(wrt, logBuf.String())
+				fmt.Fprintln(wrt, logBuf.String())
 			} else {
 				http.Error(wrt, "500: Un incident s'est produit",
 					http.StatusInternalServerError)
@@ -96,7 +96,7 @@ func (h *Catcher) ServeHTTP(wrt http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Fprintf(os.Stderr, logBuf.String())
+	fmt.Fprint(os.Stderr, logBuf.String())
 }
 func NewCatcher(debug int, name string, url_log string, version string, poste string, h http.Handler) *Catcher {
 	if version == "" {
