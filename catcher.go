@@ -92,10 +92,8 @@ func (h *Catcher) ServeHTTP(wrt http.ResponseWriter, r *http.Request) {
 		w.Code = 200
 	}
 	wrt.WriteHeader(w.Code)
-	_, err := wrt.Write(w.Body.Bytes())
-	if err != nil {
-		panic(err)
-	}
+	wrt.Write(w.Body.Bytes())
+	// ignore broken pipe (client déjà fermé ?)
 	fmt.Fprint(os.Stderr, logBuf.String())
 }
 func NewCatcher(debug int, name string, url_log string, version string, poste string, h http.Handler) *Catcher {
