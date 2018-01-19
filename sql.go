@@ -26,11 +26,11 @@ func FromTx(tx *sqlx.Tx) *Tx {
 func (x *Tx) InsertStruct(table string, f interface{}) (sql.Result, error) {
 	return x.InsertMap(table, x.structToMap(f))
 }
-func (x *Tx) InsertStructExclude(table string, f interface{}, exclude string) (sql.Result, error) {
+func (x *Tx) InsertStructExclude(table string, f interface{}, exclude []string) (sql.Result, error) {
 	return x.InsertMap(table, x.structToMapExclude(f, exclude))
 }
-func (x *Tx) InsertStructOnly(table string, f interface{}, only string) (sql.Result, error) {
-	return x.InsertMap(table, x.structToMapOnly(f, only))
+func (x *Tx) InsertStructInclude(table string, f interface{}, include []string) (sql.Result, error) {
+	return x.InsertMap(table, x.structToMapInclude(f, include))
 }
 
 // renvoi la chaine sql et les valeurs pour un insert
@@ -63,11 +63,11 @@ func (x *Tx) InsertMap(table string, m map[string]interface{}) (sql.Result, erro
 func (x *Tx) UpdateStruct(table string, f interface{}, where string, where_vals ...interface{}) (sql.Result, error) {
 	return x.UpdateMap(table, x.structToMap(f), where, where_vals...)
 }
-func (x *Tx) UpdateStructExclude(table string, f interface{}, exclude string, where string, where_vals ...interface{}) (sql.Result, error) {
+func (x *Tx) UpdateStructExclude(table string, f interface{}, exclude []string, where string, where_vals ...interface{}) (sql.Result, error) {
 	return x.UpdateMap(table, x.structToMapExclude(f, exclude), where, where_vals...)
 }
-func (x *Tx) UpdateStructOnly(table string, f interface{}, only string, where string, where_vals ...interface{}) (sql.Result, error) {
-	return x.UpdateMap(table, x.structToMapOnly(f, only), where, where_vals...)
+func (x *Tx) UpdateStructInclude(table string, f interface{}, include []string, where string, where_vals ...interface{}) (sql.Result, error) {
+	return x.UpdateMap(table, x.structToMapInclude(f, include), where, where_vals...)
 }
 
 // renvoi la chaine sql et les valeurs pour un update
@@ -114,10 +114,10 @@ func (x *Tx) structToMap(f interface{}) map[string]interface{} {
 	}
 	return m
 }
-func (x *Tx) structToMapExclude(f interface{}, exclude string) map[string]interface{} {
+func (x *Tx) structToMapExclude(f interface{}, exclude []string) map[string]interface{} {
 	m := x.structToMap(f)
 	excludes := make(map[string]bool)
-	for _, k := range strings.Split(exclude, " ") {
+	for _, k := range exclude {
 		excludes[k] = true
 	}
 	for k, _ := range m {
@@ -127,14 +127,14 @@ func (x *Tx) structToMapExclude(f interface{}, exclude string) map[string]interf
 	}
 	return m
 }
-func (x *Tx) structToMapOnly(f interface{}, only string) map[string]interface{} {
+func (x *Tx) structToMapInclude(f interface{}, include []string) map[string]interface{} {
 	m := x.structToMap(f)
-	onlys := make(map[string]bool)
-	for _, k := range strings.Split(only, " ") {
-		onlys[k] = true
+	includes := make(map[string]bool)
+	for _, k := range include {
+		includes[k] = true
 	}
 	for k, _ := range m {
-		if _, ok := onlys[k]; !ok {
+		if _, ok := includes[k]; !ok {
 			delete(m, k)
 		}
 	}

@@ -51,7 +51,7 @@ func Test_structToMap(t *testing.T) {
 	}
 }
 
-func Test_structToMapOnly(t *testing.T) {
+func Test_structToMapInclude(t *testing.T) {
 	tx := &Tx{}
 	tx.Mapper = reflectx.NewMapperFunc("db", CamelToSnake)
 	type S struct {
@@ -59,7 +59,7 @@ func Test_structToMapOnly(t *testing.T) {
 		Coral  string
 		UnDeux string
 	}
-	m := tx.structToMapOnly(&S{2, "coral", "un_deux"}, "ok un_deux")
+	m := tx.structToMapInclude(&S{2, "coral", "un_deux"}, []string{"ok", "un_deux"})
 	if m["ok"].(int) != 2 {
 		log.Fatal(m)
 	}
@@ -78,7 +78,7 @@ func Test_structToMapExclude(t *testing.T) {
 		Coral  string
 		UnDeux string
 	}
-	m := tx.structToMapExclude(&S{2, "coral", "un_deux"}, "coral")
+	m := tx.structToMapExclude(&S{2, "coral", "un_deux"}, []string{"coral"})
 	if m["ok"].(int) != 2 {
 		log.Fatal(m)
 	}
