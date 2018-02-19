@@ -27,7 +27,7 @@ func NewLogSender(name, poste, version, url_log string) *LogSender {
 }
 func (w *LogSender) go_send() {
 	buf := &bytes.Buffer{}
-	tickChan := time.NewTicker(time.Second * 1).C
+	tickChan := time.NewTicker(time.Second * 60).C
 	for {
 		select {
 		case <-tickChan:
