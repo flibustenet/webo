@@ -2,7 +2,6 @@ package webo
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/jmoiron/sqlx"
@@ -36,6 +35,5 @@ func (t *TX) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 func NewTx(db *sqlx.DB, h http.Handler) *TX {
 	c := &TX{db, h}
-	fmt.Printf("Start tx %#v", c)
 	return c
 }

@@ -14,7 +14,10 @@ import (
 
 type Tx struct {
 	*sqlx.Tx
-	Mapper *reflectx.Mapper
+	Mapper     *reflectx.Mapper
+	ParamStyle int
+	Logger     *log.Logger
+	DbType     int
 }
 
 func FromTx(tx *sqlx.Tx) *Tx {
@@ -23,6 +26,28 @@ func FromTx(tx *sqlx.Tx) *Tx {
 	return t
 }
 
+func (x *Tx) Log(query string, args ...interface{}) {
+	if x.Logger == nil {
+		return
+	}
+	x.Logger.Println(sql_fake(x.DbType, query, args...))
+}
+func (x *Tx) Select(dest interface{}, query string, args ...interface{}) error {
+	x.Log(query, args...)
+	return x.Tx.Select(dest, query, args...)
+}
+func (x *Tx) Get(dest interface{}, query string, args ...interface{}) error {
+	x.Log(query, args...)
+	return x.Tx.Get(dest, query, args...)
+}
+func (x *Tx) Exec(query string, args ...interface{}) (sql.Result, error) {
+	x.Log(query, args...)
+	return x.Tx.Exec(query, args...)
+}
+func (x *Tx) NamedExec(query string, arg interface{}) (sql.Result, error) {
+	x.Log(query, arg)
+	return x.Tx.NamedExec(query, arg)
+}
 func (x *Tx) InsertStruct(table string, f interface{}) (sql.Result, error) {
 	return x.InsertMap(table, x.structToMap(f))
 }
@@ -56,7 +81,7 @@ func (x *Tx) insertSt(table string, m map[string]interface{}) (string, []interfa
 }
 func (x *Tx) InsertMap(table string, m map[string]interface{}) (sql.Result, error) {
 	s, values := x.insertSt(table, m)
-	res, err := x.Tx.Exec(s, values...)
+	res, err := x.Exec(s, values...)
 	return res, err
 }
 
@@ -95,8 +120,7 @@ func (x *Tx) updateSt(table string, m map[string]interface{}, where string, wher
 }
 func (x *Tx) UpdateMap(table string, m map[string]interface{}, where string, where_vals ...interface{}) (sql.Result, error) {
 	s, values := x.updateSt(table, m, where, where_vals...)
-	log.Println(s)
-	res, err := x.Tx.Exec(s, values...)
+	res, err := x.Exec(s, values...)
 
 	return res, err
 }

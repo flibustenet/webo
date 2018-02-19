@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"reflect"
 	"strings"
 
@@ -23,24 +22,29 @@ func RequestCatcherLog(r *http.Request) *log.Logger {
 }
 
 type Catcher struct {
-	debug   int
-	name    string
-	url_log string
-	version string
-	poste   string
-	next    http.Handler
+	debug    int
+	name     string
+	url_log  string //envoi de l'erreur
+	version  string
+	poste    string
+	send_log string // url pour send logs
+	next     http.Handler
 }
 
 func (h *Catcher) ServeHTTP(wrt http.ResponseWriter, r *http.Request) {
 	var logBuf bytes.Buffer
 	lg := log.New(&logBuf, "", log.LstdFlags)
-	lg.Println(r.Method, r.URL)
+	lg.Println("------", r.Method, r.URL)
+	fmt.Println(r.Method, r.URL)
+	if r.Method == "POST" {
+		r.ParseForm()
+		lg.Print("POST = ", r.Form)
+	}
 	ctx := context.WithValue(r.Context(), "webo-catcher-log", lg)
 	r = r.WithContext(ctx)
 	w := httptest.NewRecorder()
 	defer func() {
 		if rec := recover(); rec != nil {
-			log.Println(rec)
 			lg.Println("================== Panic ==============")
 			s := fmt.Sprintf("%+v", rec)
 			if !strings.Contains(s, "runtime.") { // si pas de stack, créée une nouvelle erreur
@@ -55,6 +59,8 @@ func (h *Catcher) ServeHTTP(wrt http.ResponseWriter, r *http.Request) {
 			} else {
 				lg.Print(s)
 			}
+			log.Println(logBuf.String())
+			fmt.Println(logBuf.String())
 			if h.debug == 0 && h.url_log != "" {
 				resp, err := http.PostForm(h.url_log, url.Values{"title": {"[bug] " + h.name + "_" + h.version},
 					"version": {h.version},
@@ -94,8 +100,9 @@ func (h *Catcher) ServeHTTP(wrt http.ResponseWriter, r *http.Request) {
 	wrt.WriteHeader(w.Code)
 	wrt.Write(w.Body.Bytes())
 	// ignore broken pipe (client déjà fermé ?)
-	fmt.Fprint(os.Stderr, logBuf.String())
+	log.Print(logBuf.String())
 }
+
 func NewCatcher(debug int, name string, url_log string, version string, poste string, h http.Handler) *Catcher {
 	if version == "" {
 		version = "0"
@@ -107,7 +114,8 @@ func NewCatcher(debug int, name string, url_log string, version string, poste st
 		name = "no_name"
 	}
 	//fmt.Printf("Start catcher [%s] debug:%d version:%s poste:%s url_log:%s", name, debug, version, poste, url_log)
-	c := &Catcher{debug, name, url_log, version, poste, h}
-	fmt.Printf("Start catcher %#v", c) //[%s] debug:%d version:%s poste:%s url_log:%s", name, debug, version, poste, url_log)
+	c := &Catcher{debug, name, url_log, version, poste, "", h}
+	log.Printf("Start [%s] version:%s poste:%s\n", name, version, poste)
+	fmt.Printf("Start [%s] version:%s poste:%s\n", name, version, poste)
 	return c
 }
