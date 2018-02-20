@@ -79,7 +79,7 @@ func (h *Catcher) ServeHTTP(wrt http.ResponseWriter, r *http.Request) {
 				return
 			}
 			if h.debug > 0 {
-				fmt.Fprintln(wrt, logBuf.String())
+				fmt.Fprintln(wrt, "<pre>"+logBuf.String()+"</pre>")
 			} else {
 				http.Error(wrt, "500: Un incident s'est produit",
 					http.StatusInternalServerError)
