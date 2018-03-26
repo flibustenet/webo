@@ -17,6 +17,9 @@ var sql_log_re_question = regexp.MustCompile(`\?`)
 var sql_log_re_dollar = regexp.MustCompile(`\$\d+`)
 
 func sql_fake(db_type int, query string, args ...interface{}) string {
+	if len(args) == 0 {
+		return query
+	}
 	rqi := 0
 
 	frq := func(s string) string {
