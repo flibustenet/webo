@@ -36,10 +36,12 @@ func (h *Catcher) ServeHTTP(wrt http.ResponseWriter, r *http.Request) {
 	lg := log.New(&logBuf, "", log.LstdFlags)
 	lg.Println("------", r.Method, r.URL)
 	fmt.Println(r.Method, r.URL)
+	/* pas glop pour json post
 	if r.Method == "POST" {
 		r.ParseForm()
 		lg.Print("POST = ", r.Form)
 	}
+	*/
 	ctx := context.WithValue(r.Context(), "webo-catcher-log", lg)
 	r = r.WithContext(ctx)
 	w := httptest.NewRecorder()
