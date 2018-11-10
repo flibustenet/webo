@@ -90,11 +90,13 @@ func (f *SessionStore) Alert(msg string)   { f.AddFlash("alert", msg) }
 func (f *SessionStore) Alerts() []string   { return f.Flashes("alert") }
 
 func (f *SessionStore) SetCookies(w http.ResponseWriter) error {
+	log.Printf("set cookies %v", f.kv)
 	for k, v := range f.kv {
 		encode, err := f.secure.Encode(k, v)
 		if err != nil {
 			return errors.Wrapf(err, "Impossible d'enregistrer le cookie %s : %s", k, v)
 		}
+		log.Println("set ", k, v)
 		http.SetCookie(w, &http.Cookie{Name: k, Value: encode, Path: "/"})
 	}
 	return nil
@@ -104,33 +106,42 @@ func RequestSession(r *http.Request) *SessionStore {
 }
 
 type Session struct {
-	next   http.Handler
-	secure *securecookie.SecureCookie
+	next http.Handler
 }
 
 func (s *Session) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ses := &SessionStore{}
-	ses.kv = make(map[string]string)
-	ses.secure = s.secure
-	ses.kv = make(map[string]string)
-	for _, c := range r.Cookies() {
-		if strings.HasPrefix(c.Name, "gos-") {
-			var value string
-			err := s.secure.Decode(c.Name, c.Value, &value)
-			if err != nil {
-				log.Printf("Impossible de décoder le cookie %s : %s", c.Name, c.Value)
-			}
-			ses.kv[c.Name] = value
-		}
-	}
-	ctx := context.WithValue(r.Context(), "webo-session", ses)
-	r = r.WithContext(ctx)
 	s.next.ServeHTTP(w, r)
-	ses.SetCookies(w)
 }
 
 func NewSession(hmac string, bloc string, next http.Handler) *Session {
+	return &Session{SessionMiddleware(hmac, bloc)(next)}
+}
+
+func SessionMiddleware(hmac string, bloc string) func(next http.Handler) http.Handler {
 	hmacKey := []byte(fmt.Sprintf("%32s", hmac))
 	blockKey := []byte(fmt.Sprintf("%32s", bloc))
-	return &Session{next, securecookie.New(hmacKey, blockKey)}
+	secure := securecookie.New(hmacKey, blockKey)
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ses := &SessionStore{}
+			ses.secure = secure
+			ses.kv = make(map[string]string)
+			for _, c := range r.Cookies() {
+				if strings.HasPrefix(c.Name, "gos-") {
+					var value string
+					err := secure.Decode(c.Name, c.Value, &value)
+					if err != nil {
+						log.Printf("Impossible de décoder le cookie %s : %s", c.Name, c.Value)
+					}
+					ses.Lock()
+					ses.kv[c.Name] = value
+					ses.Unlock()
+				}
+			}
+			ctx := context.WithValue(r.Context(), "webo-session", ses)
+			r = r.WithContext(ctx)
+			next.ServeHTTP(w, r)
+			ses.SetCookies(w)
+		})
+	}
 }
