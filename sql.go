@@ -70,13 +70,17 @@ func (x *Tx) insertSt(table string, m map[string]interface{}) (string, []interfa
 	sort.Strings(fieldnames)
 
 	for i, name := range fieldnames {
-		fieldols = append(fieldols, fmt.Sprintf("$%d", i+1))
+		if x.DbType == DB_ACCESS {
+			fieldols = append(fieldols, "?")
+		} else {
+			fieldols = append(fieldols, fmt.Sprintf("$%d", i+1))
+		}
 		values = append(values, m[name])
 	}
 	s := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)",
 		table,
-		strings.Join(fieldnames, ","),
-		strings.Join(fieldols, ","))
+		strings.Join(fieldnames, ", "),
+		strings.Join(fieldols, ", "))
 	return s, values
 }
 func (x *Tx) InsertMap(table string, m map[string]interface{}) (sql.Result, error) {
@@ -108,7 +112,11 @@ func (x *Tx) updateSt(table string, m map[string]interface{}, where string, wher
 	}
 	sort.Strings(fieldnames)
 	for _, name := range fieldnames {
-		sets = append(sets, fmt.Sprintf("%s=$%d", name, num))
+		if x.DbType == DB_ACCESS {
+			sets = append(sets, "?")
+		} else {
+			sets = append(sets, fmt.Sprintf("%s=$%d", name, num))
+		}
 		num += 1
 		values = append(values, m[name])
 	}
