@@ -75,6 +75,10 @@ func CatcherMiddleware(debug int, name string, url_log string, version string, p
 					}
 					lg.Println("================== Panic ==============")
 					s := fmt.Sprintf("%+v", rec)
+					sdebug := ""
+					if debug == 2 {
+						sdebug = fmt.Sprintf(" : %v", rec)
+					}
 					if !strings.Contains(s, "runtime.") { // si pas de stack, créée une nouvelle erreur
 						switch x := rec.(type) {
 						case error:
@@ -89,7 +93,7 @@ func CatcherMiddleware(debug int, name string, url_log string, version string, p
 					}
 					log.Println(logBuf.String())
 					fmt.Println(logBuf.String())
-					if debug == 0 && url_log != "" {
+					if (debug == 0 || debug == 2) && url_log != "" {
 						resp, err := http.PostForm(url_log, url.Values{"title": {"[bug] " + name + "_" + version},
 							"version": {version},
 							"poste":   {poste},
@@ -97,19 +101,19 @@ func CatcherMiddleware(debug int, name string, url_log string, version string, p
 
 						if err != nil {
 							log.Println(err)
-							http.Error(wrt, "500: Un incident s'est produit et n'a pas pu être envoyé à l'administrateur",
+							http.Error(wrt, "Un incident s'est produit et n'a pas pu être envoyé à l'administrateur "+sdebug,
 								http.StatusInternalServerError)
 							return
 						}
-						http.Error(wrt, "500: Un incident s'est produit et a été envoyé à l'administrateur",
+						http.Error(wrt, "Un incident s'est produit et a été envoyé à l'administrateur "+sdebug,
 							http.StatusInternalServerError)
 						defer resp.Body.Close()
 						return
 					}
 					if debug > 0 {
-						fmt.Fprintln(wrt, "<pre>"+logBuf.String()+"</pre>")
+						fmt.Fprintln(wrt, fmt.Sprintf("<html><pre><b>%v</b></pre>", rec)+"<pre>"+logBuf.String()+"</pre>")
 					} else {
-						http.Error(wrt, "500: Un incident s'est produit",
+						http.Error(wrt, "Un incident s'est produit",
 							http.StatusInternalServerError)
 					}
 				}
