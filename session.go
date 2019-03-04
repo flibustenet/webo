@@ -19,6 +19,13 @@ type SessionStore struct {
 	secure *securecookie.SecureCookie
 }
 
+func (f *SessionStore) Clear() {
+	f.Lock()
+	defer f.Unlock()
+	for k, _ := range f.kv {
+		f.kv[k] = ""
+	}
+}
 func (f *SessionStore) PutString(key string, value string) {
 	f.Lock()
 	defer f.Unlock()
@@ -58,6 +65,9 @@ func (f *SessionStore) PopInt(key string) (int, error) {
 	return resi, nil
 }
 
+func (f *SessionStore) AddFlashf(flag string, msg string, a ...interface{}) {
+	f.AddFlash(flag, fmt.Sprintf(msg, a...))
+}
 func (f *SessionStore) AddFlash(flag string, msg string) {
 	f.Lock()
 	defer f.Unlock()
@@ -82,12 +92,21 @@ func (f *SessionStore) Flashes(flag string) []string {
 	f.kv["gos-flash-"+flag] = ""
 	return r
 }
-func (f *SessionStore) Info(msg string)    { f.AddFlash("info", msg) }
+func (f *SessionStore) Info(msg string) { f.AddFlash("info", msg) }
+func (f *SessionStore) Infof(msg string, a ...interface{}) {
+	f.Info(fmt.Sprintf(msg, a...))
+}
 func (f *SessionStore) Infos() []string    { return f.Flashes("info") }
 func (f *SessionStore) Warning(msg string) { f.AddFlash("warning", msg) }
+func (f *SessionStore) Warningf(msg string, a ...interface{}) {
+	f.Warning(fmt.Sprintf(msg, a...))
+}
 func (f *SessionStore) Warnings() []string { return f.Flashes("warning") }
 func (f *SessionStore) Alert(msg string)   { f.AddFlash("alert", msg) }
-func (f *SessionStore) Alerts() []string   { return f.Flashes("alert") }
+func (f *SessionStore) Alertf(msg string, a ...interface{}) {
+	f.Alert(fmt.Sprintf(msg, a...))
+}
+func (f *SessionStore) Alerts() []string { return f.Flashes("alert") }
 
 func (f *SessionStore) SetCookies(w http.ResponseWriter) error {
 	log.Printf("set cookies %v", f.kv)
