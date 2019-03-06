@@ -42,6 +42,8 @@ func sql_fake(db_type int, query string, args ...interface{}) string {
 
 func sql_quoter(db_type int, s interface{}) string {
 	switch v := s.(type) {
+	case nil:
+		return "null"
 	case int:
 		return strconv.Itoa(v)
 	case float64:
@@ -49,6 +51,8 @@ func sql_quoter(db_type int, s interface{}) string {
 	case string:
 		return "'" + strings.Replace(v, "'", "''", -1) + "'"
 	case time.Time:
+		return v.Format("'2006-01-02 15:04:05'")
+	case *time.Time:
 		return v.Format("'2006-01-02 15:04:05'")
 	case bool:
 		switch db_type {
@@ -67,8 +71,6 @@ func sql_quoter(db_type int, s interface{}) string {
 				return "false"
 			}
 		}
-	case nil:
-		return "null"
 	}
 	return fmt.Sprintf("%s", s)
 }
