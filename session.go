@@ -109,13 +109,11 @@ func (f *SessionStore) Alertf(msg string, a ...interface{}) {
 func (f *SessionStore) Alerts() []string { return f.Flashes("alert") }
 
 func (f *SessionStore) SetCookies(w http.ResponseWriter) error {
-	log.Printf("set cookies %v", f.kv)
 	for k, v := range f.kv {
 		encode, err := f.secure.Encode(k, v)
 		if err != nil {
 			return errors.Wrapf(err, "Impossible d'enregistrer le cookie %s : %s", k, v)
 		}
-		log.Println("set ", k, v)
 		http.SetCookie(w, &http.Cookie{Name: k, Value: encode, Path: "/"})
 	}
 	return nil

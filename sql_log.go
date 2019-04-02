@@ -2,7 +2,6 @@ package webo
 
 import (
 	"fmt"
-	"log"
 	"regexp"
 	"strconv"
 	"strings"
@@ -28,7 +27,6 @@ func sql_fake(db_type int, query string, args ...interface{}) string {
 			return sql_quoter(db_type, args[rqi-1])
 		}
 		rqi, _ = strconv.Atoi(s[1:len(s)])
-		log.Println(s, rqi)
 		return sql_quoter(db_type, args[rqi-1])
 	}
 	switch db_type {
