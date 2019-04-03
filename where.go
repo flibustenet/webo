@@ -1,4 +1,4 @@
-package edition
+package webo
 
 import (
 	"fmt"

@@ -14,7 +14,7 @@ func Test_insertSt(t *testing.T) {
 	fs["ok"] = "coral"
 	fs["yes"] = "no"
 	q, _ := tx.insertSt("mytable", fs)
-	if q != "INSERT INTO mytable (ok,yes) VALUES ($1,$2)" {
+	if q != "INSERT INTO mytable (ok, yes) VALUES ($1, $2)" {
 		log.Fatal(q)
 	}
 }
