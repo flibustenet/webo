@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gorilla/securecookie"
 	"github.com/pkg/errors"
@@ -63,6 +64,21 @@ func (f *SessionStore) PopInt(key string) (int, error) {
 	defer f.Unlock()
 	f.kv["gos-"+key] = ""
 	return resi, nil
+}
+func (f *SessionStore) PutDate(key string, value time.Time) {
+	f.Lock()
+	defer f.Unlock()
+	f.kv["gos-"+key] = value.Format("2006-01-02")
+}
+func (f *SessionStore) GetDate(key string) (time.Time, error) {
+	f.Lock()
+	defer f.Unlock()
+	res, ok := f.kv["gos-"+key]
+	if !ok {
+		return time.Time{}, errors.New("cookie vide")
+	}
+
+	return time.Parse("2006-01-02", res)
 }
 
 func (f *SessionStore) AddFlashf(flag string, msg string, a ...interface{}) {
