@@ -1,0 +1,6 @@
+tip
+- ajout Options
+- supprime sql where et tx
+
+v0.2.1
+
