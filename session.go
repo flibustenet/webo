@@ -5,108 +5,56 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
-	"strings"
-	"sync"
 	"time"
 
-	"github.com/gorilla/securecookie"
-	"github.com/pkg/errors"
+	"github.com/gorilla/sessions"
 )
 
 type SessionStore struct {
-	sync.Mutex
-	kv     map[string]string
-	secure *securecookie.SecureCookie
+	*sessions.Session
 }
 
-func (f *SessionStore) Clear() {
-	f.Lock()
-	defer f.Unlock()
-	for k, _ := range f.kv {
-		f.kv[k] = ""
-	}
-}
 func (f *SessionStore) PutString(key string, value string) {
-	f.Lock()
-	defer f.Unlock()
-	f.kv["gos-"+key] = value
+	f.Values[key] = value
 }
 func (f *SessionStore) GetString(key string) string {
-	f.Lock()
-	defer f.Unlock()
-	return f.kv["gos-"+key]
+	r, _ := f.Values[key].(string)
+	return r
 }
 func (f *SessionStore) PutInt(key string, value int) {
-	f.Lock()
-	defer f.Unlock()
-	f.kv["gos-"+key] = strconv.Itoa(value)
+	f.Values[key] = value
 }
 func (f *SessionStore) GetInt(key string) (int, error) {
-	f.Lock()
-	defer f.Unlock()
-	res, ok := f.kv["gos-"+key]
-	if !ok {
-		res = "0"
+	r, e := f.Values[key].(int)
+	if !e {
+		return r, fmt.Errorf("invalid type assertion %v not int", f.Values[key])
 	}
-	resi, err := strconv.Atoi(res)
-	if err != nil {
-		return 0, errors.Wrapf(err, "cookie non int %s : %s", key, res)
-	}
-	return resi, err
-}
-func (f *SessionStore) PopInt(key string) (int, error) {
-	resi, err := f.GetInt(key)
-	if err != nil {
-		return 0, err
-	}
-	f.Lock()
-	defer f.Unlock()
-	f.kv["gos-"+key] = ""
-	return resi, nil
+	return r, nil
 }
 func (f *SessionStore) PutDate(key string, value time.Time) {
-	f.Lock()
-	defer f.Unlock()
-	f.kv["gos-"+key] = value.Format("2006-01-02")
+	f.Values[key] = value
 }
 func (f *SessionStore) GetDate(key string) (time.Time, error) {
-	f.Lock()
-	defer f.Unlock()
-	res, ok := f.kv["gos-"+key]
-	if !ok {
-		return time.Time{}, errors.New("cookie vide")
+	r, e := f.Values[key].(time.Time)
+	if !e {
+		return r, fmt.Errorf("invalid type assertion %v not time.time", f.Values[key])
 	}
-
-	return time.Parse("2006-01-02", res)
+	return r, nil
 }
 
 func (f *SessionStore) AddFlashf(flag string, msg string, a ...interface{}) {
 	f.AddFlash(flag, fmt.Sprintf(msg, a...))
 }
 func (f *SessionStore) AddFlash(flag string, msg string) {
-	f.Lock()
-	defer f.Unlock()
-	if msg == "" {
-		return
-	}
-	kv := f.kv["gos-flash-"+flag]
-	if kv != "" {
-		kv += "§"
-	}
-	kv += msg
-	f.kv["gos-flash-"+flag] = kv
+	f.Session.AddFlash(msg, flag)
 }
 func (f *SessionStore) Flashes(flag string) []string {
-	f.Lock()
-	defer f.Unlock()
-	kv := f.kv["gos-flash-"+flag]
-	if kv == "" {
-		return make([]string, 0)
+	fls := []string{}
+	for _, s := range f.Session.Flashes(flag) {
+		st, _ := s.(string)
+		fls = append(fls, st)
 	}
-	r := strings.Split(kv, "§")
-	f.kv["gos-flash-"+flag] = ""
-	return r
+	return fls
 }
 func (f *SessionStore) Info(msg string) { f.AddFlash("info", msg) }
 func (f *SessionStore) Infof(msg string, a ...interface{}) {
@@ -118,24 +66,17 @@ func (f *SessionStore) Warningf(msg string, a ...interface{}) {
 	f.Warning(fmt.Sprintf(msg, a...))
 }
 func (f *SessionStore) Warnings() []string { return f.Flashes("warning") }
-func (f *SessionStore) Alert(msg string)   { f.AddFlash("alert", msg) }
+func (f *SessionStore) Alert(msg string) {
+	log.Println("add alert ", msg)
+	f.AddFlash("alert", msg)
+}
 func (f *SessionStore) Alertf(msg string, a ...interface{}) {
 	f.Alert(fmt.Sprintf(msg, a...))
 }
 func (f *SessionStore) Alerts() []string { return f.Flashes("alert") }
 
-func (f *SessionStore) SetCookies(w http.ResponseWriter) error {
-	for k, v := range f.kv {
-		encode, err := f.secure.Encode(k, v)
-		if err != nil {
-			return errors.Wrapf(err, "Impossible d'enregistrer le cookie %s : %s", k, v)
-		}
-		http.SetCookie(w, &http.Cookie{Name: k, Value: encode, Path: "/"})
-	}
-	return nil
-}
 func RequestSession(r *http.Request) *SessionStore {
-	return r.Context().Value("webo-session").(*SessionStore)
+	return r.Context().Value("webo-gsession").(*SessionStore)
 }
 
 type Session struct {
@@ -146,35 +87,19 @@ func (s *Session) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.next.ServeHTTP(w, r)
 }
 
-func NewSession(hmac string, bloc string, next http.Handler) *Session {
-	return &Session{SessionMiddleware(hmac, bloc)(next)}
+func NewSession(store sessions.Store, next http.Handler) *Session {
+	return &Session{SessionMiddleware(store)(next)}
 }
 
-func SessionMiddleware(hmac string, bloc string) func(next http.Handler) http.Handler {
-	hmacKey := []byte(fmt.Sprintf("%32s", hmac))
-	blockKey := []byte(fmt.Sprintf("%32s", bloc))
-	secure := securecookie.New(hmacKey, blockKey)
+func SessionMiddleware(store sessions.Store) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ses := &SessionStore{}
-			ses.secure = secure
-			ses.kv = make(map[string]string)
-			for _, c := range r.Cookies() {
-				if strings.HasPrefix(c.Name, "gos-") {
-					var value string
-					err := secure.Decode(c.Name, c.Value, &value)
-					if err != nil {
-						log.Printf("Impossible de décoder le cookie %s : %s", c.Name, c.Value)
-					}
-					ses.Lock()
-					ses.kv[c.Name] = value
-					ses.Unlock()
-				}
-			}
-			ctx := context.WithValue(r.Context(), "webo-session", ses)
+			s, _ := store.Get(r, "gos")
+			sesG := &SessionStore{s}
+			ctx := context.WithValue(r.Context(), "webo-gsession", sesG)
 			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
-			ses.SetCookies(w)
+			sesG.Save(r, w)
 		})
 	}
 }
