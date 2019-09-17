@@ -1,4 +1,5 @@
 tip
+- gorilla session
 - ajout Options
 - supprime sql where et tx
 
