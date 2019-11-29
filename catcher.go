@@ -58,6 +58,7 @@ func CatcherMiddleware(debugFlag int, name string, url_log string, version strin
 			var logBuf bytes.Buffer
 			lg := log.New(&logBuf, "", log.LstdFlags)
 			lg.Println("------", r.Method, r.URL)
+			lg.SetFlags(log.Lshortfile)
 			fmt.Println(r.Method, r.URL)
 			ctx := context.WithValue(r.Context(), "webo-catcher-log", lg)
 			r = r.WithContext(ctx)
@@ -68,6 +69,7 @@ func CatcherMiddleware(debugFlag int, name string, url_log string, version strin
 						http.Redirect(wrt, r, rec_redirect.URL, http.StatusSeeOther)
 						return
 					}
+					lg.SetFlags(0)
 					lg.Println("=== Panic ===")
 					sdebug := ""
 					switch x := rec.(type) {
