@@ -5,8 +5,6 @@ import (
 	"os"
 	"sync"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 type DayWriter struct {
@@ -52,12 +50,12 @@ func (w *DayWriter) Write(output []byte) (int, error) {
 		if os.IsNotExist(err) || now.Sub(info.ModTime()).Hours() > 24. {
 			w.fp, err = os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0600)
 			if err != nil {
-				return 0, errors.New(fmt.Sprintf("Impossible de créer le log %s : %s", path, err))
+				return 0, fmt.Errorf("Impossible de créer le log %s : %s", path, err)
 			}
 		} else {
 			w.fp, err = os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0600)
 			if err != nil {
-				return 0, errors.New(fmt.Sprintf("Impossible d'ouvrir le log %s : %s", path, err))
+				return 0, fmt.Errorf("Impossible d'ouvrir le log %s : %s", path, err)
 			}
 		}
 		w.cur_day = now.Weekday()

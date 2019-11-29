@@ -8,10 +8,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"reflect"
-	"strings"
+	"runtime/debug"
 
-	"github.com/pkg/errors"
+	"go.flib.fr/werr"
 )
 
 // RECOVER
@@ -51,19 +50,15 @@ func NewCatcher(debug int, name string, url_log string, version string, poste st
 	fmt.Printf("Start [%s] version:%s poste:%s\n", name, version, poste)
 	return c
 }
-func CatcherMiddleware(debug int, name string, url_log string, version string, poste string) func(next http.Handler) http.Handler {
+func CatcherMiddleware(debugFlag int, name string, url_log string, version string, poste string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(wrt http.ResponseWriter, r *http.Request) {
+			// log pour la durée de la requête
+			// affiché uniquement si erreur ou si debug=2
 			var logBuf bytes.Buffer
 			lg := log.New(&logBuf, "", log.LstdFlags)
 			lg.Println("------", r.Method, r.URL)
 			fmt.Println(r.Method, r.URL)
-			/* pas glop pour json post
-			if r.Method == "POST" {
-				r.ParseForm()
-				lg.Print("POST = ", r.Form)
-			}
-			*/
 			ctx := context.WithValue(r.Context(), "webo-catcher-log", lg)
 			r = r.WithContext(ctx)
 			w := httptest.NewRecorder()
@@ -73,27 +68,19 @@ func CatcherMiddleware(debug int, name string, url_log string, version string, p
 						http.Redirect(wrt, r, rec_redirect.URL, http.StatusSeeOther)
 						return
 					}
-					lg.Println("================== Panic ==============")
-					s := fmt.Sprintf("%+v", rec)
+					lg.Println("=== Panic ===")
 					sdebug := ""
-					if debug == 2 {
-						sdebug = fmt.Sprintf(" : %v", rec)
+					switch x := rec.(type) {
+					case error:
+						sdebug = werr.SprintSkip(x, "ServeHTTP")
+					default:
+						sdebug = string(debug.Stack())
 					}
-					if !strings.Contains(s, "runtime.") { // si pas de stack, créée une nouvelle erreur
-						switch x := rec.(type) {
-						case error:
-							lg.Printf("%+v", errors.WithStack(rec.(error)))
-						case string:
-							lg.Printf("%+v", errors.New(x))
-						default:
-							lg.Printf("Unknow error type %s : %v", reflect.TypeOf(rec), rec)
-						}
-					} else {
-						lg.Print(s)
-					}
+					lg.Println(sdebug)
+
 					log.Println(logBuf.String())
 					fmt.Println(logBuf.String())
-					if (debug == 0 || debug == 2) && url_log != "" {
+					if debugFlag == 0 && url_log != "" {
 						resp, err := http.PostForm(url_log, url.Values{"title": {"[bug] " + name + "_" + version},
 							"version": {version},
 							"poste":   {poste},
@@ -101,20 +88,17 @@ func CatcherMiddleware(debug int, name string, url_log string, version string, p
 
 						if err != nil {
 							log.Println(err)
-							http.Error(wrt, "Un incident s'est produit et n'a pas pu être envoyé à l'administrateur "+sdebug,
-								http.StatusInternalServerError)
+							http.Error(wrt, "Travaux en cours ! ", http.StatusInternalServerError)
 							return
 						}
-						http.Error(wrt, "Un incident s'est produit et a été envoyé à l'administrateur "+sdebug,
-							http.StatusInternalServerError)
+						http.Error(wrt, "Maintenance en cours... ", http.StatusInternalServerError)
 						defer resp.Body.Close()
 						return
 					}
-					if debug > 0 {
+					if debugFlag > 0 {
 						fmt.Fprintln(wrt, fmt.Sprintf("<html><pre><b>%v</b></pre>", rec)+"<pre>"+logBuf.String()+"</pre>")
 					} else {
-						http.Error(wrt, "Un incident s'est produit",
-							http.StatusInternalServerError)
+						http.Error(wrt, "Travaux en cours...", http.StatusInternalServerError)
 					}
 				}
 			}()
@@ -132,8 +116,9 @@ func CatcherMiddleware(debug int, name string, url_log string, version string, p
 			wrt.WriteHeader(w.Code)
 			wrt.Write(w.Body.Bytes())
 			// ignore broken pipe (client déjà fermé ?)
-			log.Print(logBuf.String())
-
+			if debugFlag == 2 {
+				log.Print(logBuf.String())
+			}
 		})
 	}
 }
