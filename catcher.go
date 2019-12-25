@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"runtime/debug"
 
 	"go.flib.fr/werr"
 )
@@ -76,7 +75,7 @@ func CatcherMiddleware(debugFlag int, name string, url_log string, version strin
 					case error:
 						sdebug = werr.SprintSkip(x, "ServeHTTP")
 					default:
-						sdebug = string(debug.Stack())
+						sdebug = werr.SprintSkip(werr.New(fmt.Sprintf("%v", rec)), "ServeHTTP")
 					}
 					lg.Println(sdebug)
 
