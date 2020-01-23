@@ -27,19 +27,20 @@ func (f *SessionStore) PutInt(key string, value int) {
 func (f *SessionStore) GetInt(key string) (int, error) {
 	r, e := f.Values[key].(int)
 	if !e {
-		return r, fmt.Errorf("invalid type assertion %v not int", f.Values[key])
+		return r, fmt.Errorf("invalid type assertion %v not int %v", f.Values[key], e)
 	}
 	return r, nil
 }
 func (f *SessionStore) PutDate(key string, value time.Time) {
-	f.Values[key] = value
+	f.Values[key] = value.Unix()
 }
 func (f *SessionStore) GetDate(key string) (time.Time, error) {
-	r, e := f.Values[key].(time.Time)
+	r, e := f.Values[key].(int64)
 	if !e {
-		return r, fmt.Errorf("invalid type assertion %v not time.time", f.Values[key])
+		return time.Now(), fmt.Errorf("invalid type assertion %v not unix time.time %v", f.Values[key], e)
 	}
-	return r, nil
+
+	return time.Unix(r, 0), nil
 }
 
 func (f *SessionStore) AddFlashf(flag string, msg string, a ...interface{}) {
@@ -99,7 +100,7 @@ func SessionMiddleware(store sessions.Store) func(next http.Handler) http.Handle
 			ctx := context.WithValue(r.Context(), "webo-gsession", sesG)
 			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
-			sesG.Save(r, w)
+			log.Println(sesG.Save(r, w))
 		})
 	}
 }
