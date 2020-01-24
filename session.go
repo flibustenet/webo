@@ -68,7 +68,6 @@ func (f *SessionStore) Warningf(msg string, a ...interface{}) {
 }
 func (f *SessionStore) Warnings() []string { return f.Flashes("warning") }
 func (f *SessionStore) Alert(msg string) {
-	log.Println("add alert ", msg)
 	f.AddFlash("alert", msg)
 }
 func (f *SessionStore) Alertf(msg string, a ...interface{}) {
@@ -100,7 +99,10 @@ func SessionMiddleware(store sessions.Store) func(next http.Handler) http.Handle
 			ctx := context.WithValue(r.Context(), "webo-gsession", sesG)
 			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
-			log.Println(sesG.Save(r, w))
+			err := sesG.Save(r, w)
+			if err != nil {
+				log.Printf("session error : %s", err)
+			}
 		})
 	}
 }
