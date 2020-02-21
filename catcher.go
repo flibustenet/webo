@@ -97,7 +97,7 @@ func CatcherMiddleware(debugFlag int, name string, url_log string, version strin
 						return
 					}
 					if debugFlag > 0 {
-						fmt.Fprintln(wrt, fmt.Sprintf("<html><pre><b>%v</b></pre>", rec)+"<pre>"+logBuf.String()+"</pre>")
+						http.Error(wrt, fmt.Sprintf("%v", rec)+"\n"+logBuf.String(), http.StatusInternalServerError)
 					} else {
 						http.Error(wrt, "Travaux en cours...", http.StatusInternalServerError)
 					}
