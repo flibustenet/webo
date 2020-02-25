@@ -87,11 +87,17 @@ func (s *Session) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.next.ServeHTTP(w, r)
 }
 
-func NewSession(store sessions.Store, next http.Handler) *Session {
-	return &Session{SessionMiddleware(store)(next)}
+func NewSession(auth string, key string, age int, next http.Handler) *Session {
+	return &Session{SessionMiddleware(auth, key, age)(next)}
 }
 
-func SessionMiddleware(store sessions.Store) func(next http.Handler) http.Handler {
+func SessionMiddleware(auth string, key string, age int) func(next http.Handler) http.Handler {
+	authb := make([]byte, 32, 32)
+	keyb := make([]byte, 32, 32)
+	copy(authb, []byte(auth))
+	copy(keyb, []byte(key))
+	store := sessions.NewCookieStore(authb, keyb)
+	store.MaxAge(age)
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			s, _ := store.Get(r, "gos")

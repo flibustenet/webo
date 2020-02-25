@@ -1,3 +1,6 @@
+v0.6.0
+- appel middleware session avec auth/key/age
+
 v0.5.0
 - catcher avec werr
 
