@@ -58,7 +58,7 @@ func CatcherMiddleware(debugFlag int, name string, url_log string, version strin
 			lg := log.New(&logBuf, "", log.LstdFlags)
 			lg.Println("------", r.Method, r.URL)
 			lg.SetFlags(log.Lshortfile)
-			fmt.Println(r.Method, r.URL)
+			//fmt.Println(r.Method, r.URL)
 			ctx := context.WithValue(r.Context(), "webo-catcher-log", lg)
 			r = r.WithContext(ctx)
 			w := httptest.NewRecorder()
