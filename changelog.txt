@@ -1,3 +1,6 @@
+v0.6.2
+- ajout log simple
+
 v0.6.0
 - appel middleware session avec auth/key/age
 
