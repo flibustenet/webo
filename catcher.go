@@ -73,9 +73,9 @@ func CatcherMiddleware(debugFlag int, name string, url_log string, version strin
 					sdebug := ""
 					switch x := rec.(type) {
 					case error:
-						sdebug = werr.SprintSkip(x, "ServeHTTP")
+						sdebug = werr.Sprint(x)
 					default:
-						sdebug = werr.SprintSkip(werr.New(fmt.Sprintf("%v", rec)), "ServeHTTP")
+						sdebug = werr.Sprint(werr.New(fmt.Sprintf("%v", rec)))
 					}
 					lg.Println(sdebug)
 
