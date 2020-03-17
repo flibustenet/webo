@@ -1,3 +1,6 @@
+v0.7.0
+- plus skip pour être sur de tout avoir
+
 v0.6.2
 - ajout log simple
 
