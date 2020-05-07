@@ -1,11 +1,29 @@
 package webo
 
 import (
+	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
+
+func StaticMiddleware(r *mux.Router, static string) func(next http.Handler) http.Handler {
+	hdl := http.StripPrefix("/"+static, http.FileServer(JustFiles{http.Dir(static)}))
+	r.PathPrefix("/" + static).Handler(hdl)
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.RequestURI, "/"+static) {
+				log.Println("***", r.RequestURI)
+				hdl.ServeHTTP(w, r)
+				return
+			}
+			log.Println("---", r.RequestURI)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
 
 func Assets(r *mux.Router, static string) {
 	r.PathPrefix("/" + static).Handler(http.StripPrefix("/"+static, http.FileServer(JustFiles{http.Dir(static)}))).Name(static)
