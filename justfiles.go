@@ -3,17 +3,20 @@ package webo
 import (
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
 )
 
-func StaticMiddleware(r *mux.Router, static string) func(next http.Handler) http.Handler {
+func StaticMiddleware(r *mux.Router, static string, maxAge int) func(next http.Handler) http.Handler {
 	hdl := http.StripPrefix("/"+static, http.FileServer(JustFiles{http.Dir(static)}))
+	max_age := strconv.Itoa(maxAge)
 	r.PathPrefix("/" + static).Handler(hdl)
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if strings.HasPrefix(r.RequestURI, "/"+static) {
+				w.Header().Set("Cache-Control", "max-age="+max_age)
 				hdl.ServeHTTP(w, r)
 				return
 			}
