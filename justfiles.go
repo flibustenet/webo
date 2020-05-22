@@ -25,6 +25,22 @@ func StaticMiddleware(r *mux.Router, static string, maxAge int) func(next http.H
 	}
 }
 
+func StaticFsMiddleware(r *mux.Router, static string, fs http.FileSystem, maxAge int) func(next http.Handler) http.Handler {
+	hdl := http.StripPrefix("/"+static, http.FileServer(fs))
+	max_age := strconv.Itoa(maxAge)
+	r.PathPrefix("/" + static).Handler(hdl)
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.RequestURI, "/"+static) {
+				w.Header().Set("Cache-Control", "max-age="+max_age)
+				hdl.ServeHTTP(w, r)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 func Assets(r *mux.Router, static string) {
 	r.PathPrefix("/" + static).Handler(http.StripPrefix("/"+static, http.FileServer(JustFiles{http.Dir(static)}))).Name(static)
 	//r.PathPrefix("/" + static).Handler(http.StripPrefix("/"+static, http.FileServer(http.Dir(static)))).Name(static)
