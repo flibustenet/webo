@@ -26,7 +26,7 @@ func StaticMiddleware(r *mux.Router, static string, maxAge int) func(next http.H
 }
 
 func StaticFsMiddleware(r *mux.Router, static string, fs http.FileSystem, maxAge int) func(next http.Handler) http.Handler {
-	hdl := http.StripPrefix("/"+static, http.FileServer(fs))
+	hdl := http.FileServer(fs)
 	max_age := strconv.Itoa(maxAge)
 	r.PathPrefix("/" + static).Handler(hdl)
 	return func(next http.Handler) http.Handler {
