@@ -3,12 +3,35 @@ package webo
 import (
 	"bytes"
 	"html/template"
+	"reflect"
 )
 
-var tmpOptions = template.Must(template.New("options").Parse(`
+func hasField(v interface{}, name string) bool {
+	rv := reflect.ValueOf(v)
+	if rv.Kind() == reflect.Ptr {
+		rv = rv.Elem()
+	}
+	if rv.Kind() != reflect.Struct {
+		return false
+	}
+	return rv.FieldByName(name).IsValid()
+}
+
+type OptionAttrer interface {
+	OptionAttrs() template.HTMLAttr
+}
+
+func hasAttr(v interface{}) bool {
+	if _, ok := v.(OptionAttrer); ok {
+		return true
+	}
+	return false
+}
+
+var tmpOptions = template.Must(template.New("options").Funcs(template.FuncMap{"hasAttr": hasAttr}).Parse(`
 {{$sel := .Sel}}
 {{range .Options}}
-<option value='{{.OptionValue}}' {{if eq .OptionValue $sel}}selected{{end}}>{{.OptionLabel}}</option>
+<option value='{{.OptionValue}}' {{if hasAttr . }}{{.OptionAttrs}}{{end}} {{if eq .OptionValue $sel}}selected{{end}}>{{.OptionLabel}}</option>
 {{end}}
 `)).Option("missingkey=error")
 
@@ -30,7 +53,7 @@ func FmtOptions(slice interface{}, sel interface{}) template.HTML {
 	return template.HTML(s.String())
 }
 
-var tmpOptionsGroup = template.Must(template.New("optionsGroup").Parse(`
+var tmpOptionsGroup = template.Must(template.New("optionsGroup").Funcs(template.FuncMap{"hasAttr": hasAttr}).Parse(`
 {{$sel := .Sel}}
 {{$group := ""}}
 {{range .Options}}
@@ -39,7 +62,7 @@ var tmpOptionsGroup = template.Must(template.New("optionsGroup").Parse(`
 	<optgroup label='{{.OptionGroup}}'>
 	{{$group = .OptionGroup}}
 	{{end}}
-<option value='{{.OptionValue}}' {{if eq .OptionValue $sel}}selected{{end}}>{{.OptionLabel}}</option>
+<option value='{{.OptionValue}}' {{if hasAttr . }}{{.OptionAttrs}}{{end}} {{if eq .OptionValue $sel}}selected{{end}}>{{.OptionLabel}}</option>
 {{end}}
 </optgroup>
 `)).Option("missingkey=error")

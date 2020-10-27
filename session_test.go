@@ -24,7 +24,7 @@ func TestSession(t *testing.T) {
 		t.Errorf("alert=%s", ses.Flashes("alert"))
 	}
 
-	now := time.Now()
+	now := time.Now().Truncate(time.Second)
 	ses.PutDate("d", now)
 	d, _ := ses.GetDate("d")
 	if !d.Equal(now) {
