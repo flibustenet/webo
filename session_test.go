@@ -2,6 +2,7 @@ package webo
 
 import (
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
@@ -35,5 +36,20 @@ func TestSession(t *testing.T) {
 	_, e = ses.GetInt("j")
 	if e == nil {
 		t.Errorf("should be nil")
+	}
+
+	u := url.Values{}
+	u.Set("x", "xxx")
+	u.Set("y", "yyy")
+	ses.PutForm("fo", u)
+	res, err := ses.GetForm("fo")
+	if err != nil {
+		t.Errorf("GetForm error : %v", err)
+	}
+	if res.Get("x") != "xxx" {
+		t.Errorf("GetForm x should be xxx : %s", res["x"])
+	}
+	if res.Get("y") != "yyy" {
+		t.Errorf("GetForm y should be yyy : %s", res["y"])
 	}
 }

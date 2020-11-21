@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/gorilla/sessions"
@@ -41,6 +42,14 @@ func (f *SessionStore) GetDate(key string) (time.Time, error) {
 	}
 
 	return time.Unix(r, 0), nil
+}
+
+func (f *SessionStore) PutForm(key string, u url.Values) {
+	f.PutString(key, u.Encode())
+}
+
+func (f *SessionStore) GetForm(key string) (url.Values, error) {
+	return url.ParseQuery(f.GetString(key))
 }
 
 func (f *SessionStore) AddFlashf(flag string, msg string, a ...interface{}) {
