@@ -1,3 +1,5 @@
+- Session GetForm et PutForm
+
 v0.10.0
 - Options avec OptionAttrs
 
