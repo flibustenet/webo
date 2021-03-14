@@ -1,6 +1,7 @@
 package webo
 
 import (
+	"io/fs"
 	"net/http"
 	"os"
 	"strconv"
@@ -11,6 +12,22 @@ import (
 
 func StaticMiddleware(r *mux.Router, static string, maxAge int) func(next http.Handler) http.Handler {
 	hdl := http.StripPrefix("/"+static, http.FileServer(JustFiles{http.Dir(static)}))
+	max_age := strconv.Itoa(maxAge)
+	r.PathPrefix("/" + static).Handler(hdl)
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.RequestURI, "/"+static) {
+				w.Header().Set("Cache-Control", "max-age="+max_age)
+				hdl.ServeHTTP(w, r)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func StaticIoFsMiddleware(r *mux.Router, static string, fs fs.FS, maxAge int) func(next http.Handler) http.Handler {
+	hdl := http.StripPrefix("/"+static+"/", http.FileServer(http.FS(fs)))
 	max_age := strconv.Itoa(maxAge)
 	r.PathPrefix("/" + static).Handler(hdl)
 	return func(next http.Handler) http.Handler {
