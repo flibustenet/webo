@@ -5,7 +5,7 @@ require (
 	github.com/gorilla/sessions v1.2.0
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/mattn/go-sqlite3 v1.10.0 // indirect
-	go.flib.fr/werr v0.0.11
+	go.flibuste.net/werr v0.2.0
 	google.golang.org/appengine v1.6.2 // indirect
 )
 

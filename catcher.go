@@ -9,7 +9,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 
-	"go.flib.fr/werr"
+	"go.flibuste.net/werr"
 )
 
 // RECOVER
