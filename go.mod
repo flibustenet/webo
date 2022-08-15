@@ -1,4 +1,4 @@
-module go.flib.fr/webo
+module go.flibuste.net/webo
 
 require (
 	github.com/gorilla/mux v1.7.0
