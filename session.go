@@ -100,7 +100,13 @@ func NewSession(auth string, key string, age int, next http.Handler) *Session {
 	return &Session{SessionMiddleware(auth, key, age)(next)}
 }
 
+// deprecate : use SessionNameMiddleware
 func SessionMiddleware(auth string, key string, age int) func(next http.Handler) http.Handler {
+	return SessionNameMiddleware("gos", key, age)
+}
+
+// session with possibility to set the name
+func SessionNameMiddleware(name string, auth string, key string, age int) func(next http.Handler) http.Handler {
 	authb := make([]byte, 32, 32)
 	keyb := make([]byte, 32, 32)
 	copy(authb, []byte(auth))
@@ -109,7 +115,7 @@ func SessionMiddleware(auth string, key string, age int) func(next http.Handler)
 	store.MaxAge(age)
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			s, _ := store.Get(r, "gos")
+			s, _ := store.Get(r, name)
 			sesG := &SessionStore{s}
 			ctx := context.WithValue(r.Context(), "webo-gsession", sesG)
 			r = r.WithContext(ctx)
