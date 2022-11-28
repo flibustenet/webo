@@ -102,7 +102,7 @@ func NewSession(auth string, key string, age int, next http.Handler) *Session {
 
 // deprecate : use SessionNameMiddleware
 func SessionMiddleware(auth string, key string, age int) func(next http.Handler) http.Handler {
-	return SessionNameMiddleware("gos", key, age)
+	return SessionNameMiddleware("gos", auth, key, age)
 }
 
 // session with possibility to set the name
