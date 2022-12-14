@@ -1,3 +1,18 @@
+
+func StaticDiskMiddleware
+func StaticDiskMiddlewareOrigin
+func StaticFsMiddleware
+func StaticFsMiddlewareOrigin
+SessionNameMiddleware to give a name to the session
+
+Catcher send Cache-Control: no-cache...
+
+v0.14.0
+- go.flibuste.net
+
+v0.13.0
+- go.flibuste.net
+
 v0.12.0
 - Ajout IoFsMiddleware
 

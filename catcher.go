@@ -111,6 +111,9 @@ func CatcherMiddleware(debugFlag int, name string, url_log string, version strin
 			if wrt.Header().Get("Content-Type") == "" {
 				wrt.Header().Set("Content-Type", "text/html; charset=utf-8")
 			}
+			if wrt.Header().Get("Cache-Control") == "" {
+				wrt.Header().Set("Cache-Control", "no-cache, no-store, no-transform, must-revalidate, private, max-age=0")
+			}
 			if w.Code == 0 {
 				w.Code = 200
 			}
