@@ -1,4 +1,5 @@
 
+Redirect accepte ..args pour fmt
 func StaticDiskMiddleware
 func StaticDiskMiddlewareOrigin
 func StaticFsMiddleware
