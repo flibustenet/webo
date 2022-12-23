@@ -71,7 +71,7 @@ func StaticDiskMiddlewareOrigin(r *mux.Router, path string, maxAge int, origin s
 // with :
 // Cache-Control maxAge
 func StaticFsMiddleware(r *mux.Router, fs fs.FS, path string, maxAge int) func(next http.Handler) http.Handler {
-	return StaticFsMiddleware(r, fs, path, maxAge)
+	return StaticFsMiddlewareOrigin(r, fs, path, maxAge, "")
 }
 
 // with gorilla mux.Router (gorilla must know that /static exists)
