@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-
-	"github.com/gorilla/mux"
 )
 
 type static struct {
@@ -16,7 +14,7 @@ type static struct {
 	fileServer http.Handler // http.FileServer
 }
 
-func (s static) handler(r *mux.Router) func(next http.Handler) http.Handler {
+func (s static) handler() func(next http.Handler) http.Handler {
 	path := s.path
 	if path == "" {
 		path = "/static"
@@ -27,7 +25,6 @@ func (s static) handler(r *mux.Router) func(next http.Handler) http.Handler {
 	hdl := http.StripPrefix(path, s.fileServer)
 	max_age := strconv.Itoa(s.maxAge)
 	// must inform router that this path exists
-	r.PathPrefix(path).Handler(hdl)
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if strings.HasPrefix(r.RequestURI, path+"/") {
@@ -48,8 +45,8 @@ func (s static) handler(r *mux.Router) func(next http.Handler) http.Handler {
 // add a static middleware from disk
 // with :
 // Cache-Control max-age=maxAge
-func StaticDiskMiddleware(r *mux.Router, path string, maxAge int) func(next http.Handler) http.Handler {
-	return StaticDiskMiddlewareOrigin(r, path, maxAge, "")
+func StaticDiskMiddleware(path string, maxAge int) func(next http.Handler) http.Handler {
+	return StaticDiskMiddlewareOrigin(path, maxAge, "")
 }
 
 // with gorilla mux.Router (gorilla must know that /static exists)
@@ -57,21 +54,21 @@ func StaticDiskMiddleware(r *mux.Router, path string, maxAge int) func(next http
 // with :
 // Cache-Control max-age=maxAge
 // Access-Control-Allow-Origin origin
-func StaticDiskMiddlewareOrigin(r *mux.Router, path string, maxAge int, origin string) func(next http.Handler) http.Handler {
+func StaticDiskMiddlewareOrigin(path string, maxAge int, origin string) func(next http.Handler) http.Handler {
 	return static{
 		path:       path,
 		maxAge:     maxAge,
 		origin:     origin,
 		fileServer: http.FileServer(JustFiles{http.Dir(path)}),
-	}.handler(r)
+	}.handler()
 }
 
 // with gorilla mux.Router (gorilla must know that /static exists)
 // add a static middleware from fs.FS
 // with :
 // Cache-Control maxAge
-func StaticFsMiddleware(r *mux.Router, fs fs.FS, path string, maxAge int) func(next http.Handler) http.Handler {
-	return StaticFsMiddlewareOrigin(r, fs, path, maxAge, "")
+func StaticFsMiddleware(path string, fs fs.FS, maxAge int) func(next http.Handler) http.Handler {
+	return StaticFsMiddlewareOrigin(path, fs, maxAge, "")
 }
 
 // with gorilla mux.Router (gorilla must know that /static exists)
@@ -79,11 +76,11 @@ func StaticFsMiddleware(r *mux.Router, fs fs.FS, path string, maxAge int) func(n
 // with :
 // Cache-Control max-age=maxAge
 // Access-Control-Allow-Origin origin
-func StaticFsMiddlewareOrigin(r *mux.Router, fs fs.FS, path string, maxAge int, origin string) func(next http.Handler) http.Handler {
+func StaticFsMiddlewareOrigin(path string, fs fs.FS, maxAge int, origin string) func(next http.Handler) http.Handler {
 	return static{
 		path:       path,
 		maxAge:     maxAge,
 		origin:     origin,
 		fileServer: http.FileServer(http.FS(fs)),
-	}.handler(r)
+	}.handler()
 }

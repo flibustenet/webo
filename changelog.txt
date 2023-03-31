@@ -1,3 +1,9 @@
+v0.16.0
+
+Static sans dépendance gorilla mux (pour compatibilité chi)
+Nécessite d'ajouter la route /static (avec null)
+Ajoute LogMiddleware (simple method url)
+
 v0.15.0
 
 Redirect accepte ..args pour fmt
