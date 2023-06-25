@@ -11,15 +11,19 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-
-	"go.flibuste.net/werr"
+	"runtime"
+	"runtime/debug"
 )
 
 // RECOVER
 
 // renvoi le log lui-même créé par catcher et positionné dans context
 func RequestCatcherLog(r *http.Request) *log.Logger {
-	return r.Context().Value("webo-catcher-log").(*log.Logger)
+	l := r.Context().Value("webo-catcher-log")
+	if l != nil {
+		return l.(*log.Logger)
+	}
+	return log.Default()
 }
 
 type Catcher struct {
@@ -52,6 +56,7 @@ func NewCatcher(debug int, name string, url_log string, version string, poste st
 	fmt.Printf("Start [%s] version:%s poste:%s\n", name, version, poste)
 	return c
 }
+
 func CatcherMiddleware(debugFlag int, name string, url_log string, version string, poste string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(wrt http.ResponseWriter, r *http.Request) {
@@ -75,14 +80,15 @@ func CatcherMiddleware(debugFlag int, name string, url_log string, version strin
 					lg.Println("=== Panic ===")
 					sdebug := ""
 					switch x := rec.(type) {
+					case runtime.Error:
+						sdebug = fmt.Sprintf("%s\n%v", debug.Stack(), rec)
 					case error:
-						sdebug = werr.Sprint(x)
+						sdebug = x.Error()
 					default:
-						sdebug = werr.Sprint(werr.New(fmt.Sprintf("%v", rec)))
+						sdebug = fmt.Sprintf("%s\n%v", debug.Stack(), rec)
 					}
 					lg.Println(sdebug)
 
-					log.Println(logBuf.String())
 					fmt.Println(logBuf.String())
 					if debugFlag == 0 && url_log != "" {
 						resp, err := http.PostForm(url_log, url.Values{"title": {"[bug] " + name + "_" + version},
@@ -100,7 +106,7 @@ func CatcherMiddleware(debugFlag int, name string, url_log string, version strin
 						return
 					}
 					if debugFlag > 0 {
-						http.Error(wrt, fmt.Sprintf("%v", rec)+"\n"+logBuf.String(), http.StatusInternalServerError)
+						http.Error(wrt, logBuf.String(), http.StatusInternalServerError)
 					} else {
 						http.Error(wrt, "Travaux en cours...", http.StatusInternalServerError)
 					}
