@@ -1,57 +1,67 @@
-v0.16.0
+# CHANGELOG
 
-Static sans dépendance gorilla mux (pour compatibilité chi)
-Nécessite d'ajouter la route /static (avec null)
-Ajoute LogMiddleware (simple method url)
+## v0.18.0
 
-v0.15.0
+- DirectCatcher
 
-Redirect accepte ..args pour fmt
-func StaticDiskMiddleware
-func StaticDiskMiddlewareOrigin
-func StaticFsMiddleware
-func StaticFsMiddlewareOrigin
-SessionNameMiddleware to give a name to the session
+## v0.17.0
 
-Catcher send Cache-Control: no-cache...
+- werr v0.5.0 opt-in trace
 
-v0.14.0
+## v0.16.0
+
+- License MIT
+- Static sans dépendance gorilla mux (pour compatibilité chi)
+- Nécessite d'ajouter la route /static (avec null)
+- Ajoute LogMiddleware (simple method url)
+
+## v0.15.0
+
+- Redirect accepte ..args pour fmt
+- func StaticDiskMiddleware
+- func StaticDiskMiddlewareOrigin
+- func StaticFsMiddleware
+- func StaticFsMiddlewareOrigin
+- SessionNameMiddleware to give a name to the session
+- Catcher send Cache-Control: no-cache...
+
+## v0.14.0
 - go.flibuste.net
 
-v0.13.0
+## v0.13.0
 - go.flibuste.net
 
-v0.12.0
+## v0.12.0
 - Ajout IoFsMiddleware
 
-v0.11.0
+## v0.11.0
 - Session GetForm et PutForm
 
-v0.10.0
+## v0.10.0
 - Options avec OptionAttrs
 
-v0.9.0
+## v0.9.0
 - Static Middleware
 
-v0.8.0
+## v0.8.0
 - Static Middleware
 
-v0.7.0
+## v0.7.0
 - plus skip pour être sur de tout avoir
 
-v0.6.2
+## v0.6.2
 - ajout log simple
 
-v0.6.0
+## v0.6.0
 - appel middleware session avec auth/key/age
 
-v0.5.0
+## v0.5.0
 - catcher avec werr
 
-v0.4.0
+## v0.4.0
 - gorilla session
 - ajout Options
 - supprime sql where et tx
 
-v0.2.1
+## v0.2.1
 
