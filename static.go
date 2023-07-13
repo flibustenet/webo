@@ -10,6 +10,9 @@ import (
 	"strings"
 )
 
+// gorilla mux
+// r.PathPrefix("/static").HandlerFunc(nil)
+
 type static struct {
 	path       string
 	maxAge     int
