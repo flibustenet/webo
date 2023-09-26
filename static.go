@@ -4,12 +4,36 @@
 package webo
 
 import (
+	"fmt"
 	"io/fs"
 	"net/http"
 	"strconv"
 	"strings"
 )
 
+// with embed
+// mux.HandleFunc("/static/", webo.HandleStaticFs("/static/", static.StaticFS, 3600*24))
+// with disk
+// mux.HandleFunc("/static/", webo.HandleStaticFs("/static/", os.DirFS("static"), 3600*24))
+// with gorilla
+// r.PathPrefix("/static/").HandlerFunc(HandleStaticFS("/static/", static.StaticFiles, 3600*24))
+func HandleStaticFS(path string, fs fs.FS, maxAge int) func(w http.ResponseWriter, r *http.Request) {
+	return HandleStaticFSOrigin(path, fs, maxAge, "")
+}
+func HandleStaticFSOrigin(path string, fs fs.FS, maxAge int, origin string) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d", maxAge))
+		if origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		}
+		fileServer := http.FileServer(JustFiles{FS: http.FS(fs)})
+		hdl := http.StripPrefix(path, fileServer)
+		hdl.ServeHTTP(w, r)
+	}
+}
+
+// DEPRECATED under this
+//
 // gorilla mux
 // r.PathPrefix("/static").HandlerFunc(nil)
 

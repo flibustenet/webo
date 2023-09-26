@@ -14,6 +14,7 @@ import (
 	"runtime/debug"
 )
 
+// NOT TESTED
 // DirectCatcherMiddleware
 // sans httptest.NewRecord, envoi direct vers http.ResponseWriter
 // possible http: superfluous response.WriteHeader à ignorer
